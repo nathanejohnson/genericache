@@ -1,4 +1,4 @@
-package genericache
+package genericache_test
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/nathanejohnson/genericache"
 )
 
 type noErrorFilled struct {
@@ -52,7 +54,7 @@ func TestNoErrors(t *testing.T) {
 		t:     t,
 		delay: time.Second * 3,
 	}
-	c := NewGeneriCache(nof.fill, false)
+	c := genericache.NewGeneriCache(nof.fill, false)
 	var wg sync.WaitGroup
 	t1 := time.Now()
 	for i := 1; i < 10; i++ {
@@ -75,7 +77,7 @@ func TestWithErrors(t *testing.T) {
 		delay:         time.Second * 3,
 		t:             t,
 	}
-	c := NewGeneriCache(euf.fill, true)
+	c := genericache.NewGeneriCache(euf.fill, true)
 	var wg sync.WaitGroup
 	t1 := time.Now()
 	for i := 1; i < 10; i++ {
