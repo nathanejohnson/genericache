@@ -9,7 +9,7 @@ type Filler[K comparable, V any] func(K) (V, error)
 
 // GeneriCache implements a simple cache with no eviction.
 type GeneriCache[K comparable, V any] struct {
-	sync.Mutex
+	mu          sync.Mutex
 	entries     map[K]*cacheEntry[V]
 	fill        Filler[K, V]
 	retryErrors bool
@@ -25,8 +25,8 @@ type cacheEntry[V any] struct {
 // f is a filler method meant to fill the cache on cache miss.  retryErrors indicates
 // whether or not an error received from f should indicate to try the filler function
 // on next Get() operation.  If this is false, it will return the same error over and
-// over and not call f.  If true, it will call f on subsequent Get() calls
-// until error is nil.
+// over and not call f more than once per key.  If true, it will call f on subsequent
+// Get() calls until error is nil.
 func NewGeneriCache[K comparable, V any](f Filler[K, V], retryErrors bool) *GeneriCache[K, V] {
 	return &GeneriCache[K, V]{
 		entries:     make(map[K]*cacheEntry[V]),
@@ -37,12 +37,12 @@ func NewGeneriCache[K comparable, V any](f Filler[K, V], retryErrors bool) *Gene
 
 // Get - Get a value from the cache.  On cache miss, it will call the Filler function.
 func (gc *GeneriCache[K, V]) Get(k K) (V, error) {
-	gc.Lock()
+	gc.mu.Lock()
 	var ce *cacheEntry[V]
 	var ok bool
 	if ce, ok = gc.entries[k]; ok {
 		// cache hit
-		gc.Unlock()
+		gc.mu.Unlock()
 		// lock here to make sure a fill operation isn't in flight.
 		ce.Lock()
 		if ce.err == nil || !gc.retryErrors {
@@ -54,7 +54,7 @@ func (gc *GeneriCache[K, V]) Get(k K) (V, error) {
 		ce = &cacheEntry[V]{}
 		ce.Lock()
 		gc.entries[k] = ce
-		gc.Unlock()
+		gc.mu.Unlock()
 	}
 	// if we get here, gc is unlocked, ce is locked.
 	defer ce.Unlock()
