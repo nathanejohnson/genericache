@@ -1,4 +1,4 @@
-// Package genericache is a simple cache with no evictions, no expiration.
+// Package genericache is a simple thread safe cache with no evictions, no expiration.
 package genericache
 
 import "sync"
@@ -22,7 +22,7 @@ type cacheEntry[V any] struct {
 }
 
 // NewGeneriCache - factory method for GeneriCache.  Use this to initialize.
-// fillFunc is a filler method meant to fill the cache on cache miss.  retryErrors indicates
+// fillFunc is a method meant to fill the cache on cache miss.  retryErrors indicates
 // whether an error received from fillFunc should indicate to try the filler function
 // on next Get() operation.  If this is false, it will return the same error over and
 // over and not call fillFunc more than once per key.  If true, it will call fillFunc on subsequent
